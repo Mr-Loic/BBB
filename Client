@@ -1,32 +1,36 @@
-/* The Client Class - Written by Derek Molloy for the EE402 Module
- * See: ee402.eeng.dcu.ie
- * 
- * 
- */
 
-package ee402;
-
-import java.net.*;
+import java.net.*; 
 import java.io.*;
 
-public class Client {
+
+public class Client  {
+	
+	
 	
 	private static int portNumber = 5050;
     private Socket socket = null;
     private ObjectOutputStream os = null;
     private ObjectInputStream is = null;
+    private DataSample data ;
+    
+    
 
 	// the constructor expects the IP address of the server - the port is fixed
-    public Client(String serverIP) {
-    	if (!connectToServer(serverIP)) {
-    		System.out.println("XX. Failed to open socket connection to: " + serverIP);            
+    public Client(DataSample data) {
+    	this.data=data;
+    	if (!connectToServer(data)) {
+    		System.out.println("XX. Failed to open socket connection to: " + data.getServerIP());            
     	}
     }
 
-    private boolean connectToServer(String serverIP) {
-    	try { // open a new socket to the server 
-    		this.socket = new Socket(serverIP,portNumber);
-    		this.os = new ObjectOutputStream(this.socket.getOutputStream());
+    private boolean connectToServer(DataSample data) {
+    	try { 
+    		
+    		
+    		// open a new socket to the server 
+    		this.socket = new Socket(data.getServerIP(),portNumber);
+    		
+    		this.os = new ObjectOutputStream((this.socket.getOutputStream()));
     		this.is = new ObjectInputStream(this.socket.getInputStream());
     		System.out.println("00. -> Connected to Server:" + this.socket.getInetAddress() 
     				+ " on port: " + this.socket.getPort());
@@ -42,9 +46,11 @@ public class Client {
     }
 
     private void getDate() {
-    	String theDateCommand = "GetDate", theDateAndTime;
-    	System.out.println("01. -> Sending Command (" + theDateCommand + ") to the server...");
-    	this.send(theDateCommand);
+    	String theDateAndTime;
+    	
+    	System.out.println("01. -> Sending Command  "+data.gettheDatacommand()+" to the server...");
+    	
+    	this.send(data);
     	try{
     		theDateAndTime = (String) receive();
     		System.out.println("05. <- The Server responded with: ");
@@ -57,11 +63,15 @@ public class Client {
     }
 	
     // method to send a generic object.
-    private void send(Object o) {
+    private void send(Object data) {
 		try {
+			
 		    System.out.println("02. -> Sending an object...");
-		    os.writeObject(o);
+
+		    os.writeObject(data);	
+		   
 		    os.flush();
+		    
 		} 
 	    catch (Exception e) {
 		    System.out.println("XX. Exception Occurred on Sending:" +  e.toString());
@@ -86,8 +96,13 @@ public class Client {
     public static void main(String args[]) 
     {
     	System.out.println("**. Java Client Application - EE402 OOP Module, DCU");
-    	if(args.length==1){
-    		Client theApp = new Client(args[0]);
+    	if (args[1]==null || args[2]==null) { args[1]="10"; args[2]="55";}
+    	if(args.length==3){
+    		
+    		if (args[1]==null || args[2]==null) { args[1]="10"; args[2]="55";}
+    		
+    		DataSample data = new DataSample(args[0],args[1],args[2]) ;
+    		Client theApp = new Client(data);
 		    theApp.getDate();
 		}
     	else
