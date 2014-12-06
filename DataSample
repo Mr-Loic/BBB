@@ -1,0 +1,39 @@
+import java.io.Serializable;
+
+
+public class DataSample implements Serializable
+{
+
+	
+	private static final long serialVersionUID = 1L;
+	String serverIp;
+	String low_trigger;
+	String high_trigger;
+	String theDateCommand ;
+	
+	public DataSample (String serverIP, String low_trigger, String high_trigger)
+	{
+		this.serverIp=serverIP;
+		this.low_trigger=low_trigger;
+		this.high_trigger=high_trigger;		
+		this.theDateCommand ="GetDate";
+	}
+	
+	String getServerIP()
+	{
+		return this.serverIp;
+	}
+	
+	Float getlow_trigger()
+	{
+		return Float.parseFloat(this.low_trigger);
+	}
+	Float gethigh_trigger()
+	{
+		return Float.parseFloat(this.high_trigger);
+	}
+	String gettheDatacommand()
+	{
+		return this.theDateCommand;
+	}
+}
