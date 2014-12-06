@@ -1,28 +1,24 @@
-/* The Connection Handler Class - Written by Derek Molloy for the EE402 Module
- * See: ee402.eeng.dcu.ie
- */
 
-package ee402;
-
-import java.net.*;
+import java.net.*;  
 import java.io.*;
 
-public class ConnectionHandler
+public class ConnectionHandler extends Thread
 {
     private Socket clientSocket = null;				// Client socket object
     private ObjectInputStream is = null;			// Input stream
     private ObjectOutputStream os = null;			// Output stream
-    private DateTimeService theDateService;
+    private DateTimeService time;
     
 	// The constructor for the connection handler
-    public ConnectionHandler(Socket clientSocket) {
+    public ConnectionHandler(Socket clientSocket,DateTimeService time) {
         this.clientSocket = clientSocket;
+        this.time=time;
         //Set up a service object to get the current date and time
-        theDateService = new DateTimeService();
+        //theDateService = new DateTimeService();
     }
 
     // Will eventually be the thread execution method - can't pass the exception back
-    public void init() {
+    public void run() {
          try {
             this.is = new ObjectInputStream(clientSocket.getInputStream());
             this.os = new ObjectOutputStream(clientSocket.getOutputStream());
@@ -37,19 +33,27 @@ public class ConnectionHandler
 
     // Receive and process incoming string commands from client socket 
     private boolean readCommand() {
-        String s = null;
+    	
+        DataSample s = null;
+        
+        
         try {
-            s = (String) is.readObject();
+        	
+            s = (DataSample) is.readObject();   
+            
         } 
         catch (Exception e){    // catch a general exception
+        	 
         	this.closeSocket();
             return false;
         }
-        System.out.println("01. <- Received a String object from the client (" + s + ").");
-        
+       
+        System.out.println("01. <- Received an object from the client , the command is: " + s.gettheDatacommand());
+        System.out.println("The low_trigger is: " + s.getlow_trigger());
+        System.out.println("The high_trigger is: " + s.gethigh_trigger());
         // At this point there is a valid String object
         // invoke the appropriate function based on the command 
-        if (s.equalsIgnoreCase("GetDate")){ 
+        if (s.gettheDatacommand().equalsIgnoreCase("GetDate")){ 
             this.getDate(); 
         }       
         else { 
@@ -57,18 +61,19 @@ public class ConnectionHandler
         }
         return true;
     }
-
-    // Use our custom DateTimeService Class to get the date and time
-    private void getDate() {	// use the date service to get the date
-        String currentDateTimeText = theDateService.getDateAndTime();
+    
+    public void getDate() {	// use the date service to get the date
+        String currentDateTimeText = time.getDateAndTime();
+       
         this.send(currentDateTimeText);
     }
+
 
     // Send a generic object back to the client 
     private void send(Object o) {
         try {
             System.out.println("02. -> Sending (" + o +") to the client.");
-            this.os.writeObject(o);
+            this.os.writeObject(o);           
             this.os.flush();
         } 
         catch (Exception e) {
