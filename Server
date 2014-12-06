@@ -1,18 +1,16 @@
-/* The Date Server Class - Written by Derek Molloy for the EE402 Module
- * See: ee402.eeng.dcu.ie
- */
-
-package ee402;
 
 import java.net.*;
 import java.io.*;
 
-public class Server 
+public class Server
 {
+	
 	private static int portNumber = 5050;
 	
+	
+
 	public static void main(String args[]) {
-		
+		DateTimeService theDateService = new DateTimeService();
 		boolean listening = true;
         ServerSocket serverSocket = null;
         
@@ -43,9 +41,9 @@ public class Server
                 System.out.println("XX. Accept failed: " + portNumber + e);
                 listening = false;   // end the loop - stop listening for further client requests
             }	
-            
-            ConnectionHandler con = new ConnectionHandler(clientSocket);
-            con.init(); 
+           
+            ConnectionHandler con = new ConnectionHandler(clientSocket,theDateService);
+            con.start(); 
             System.out.println("02. -- Finished communicating with client:" + clientSocket.getInetAddress().toString());
         }
         // Server is no longer listening for client connections - time to shut down.
