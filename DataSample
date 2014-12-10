@@ -3,13 +3,13 @@ import java.io.Serializable;
 
 public class DataSample implements Serializable
 {
-
-	
 	private static final long serialVersionUID = 1L;
 	String serverIp;
 	String low_trigger;
 	String high_trigger;
-	String theDateCommand ;
+	String theDateCommand;
+	Temperature temp;	
+	static int serialnb ;
 	
 	public DataSample (String serverIP, String low_trigger, String high_trigger)
 	{
@@ -17,6 +17,8 @@ public class DataSample implements Serializable
 		this.low_trigger=low_trigger;
 		this.high_trigger=high_trigger;		
 		this.theDateCommand ="GetDate";
+		//temp.getTemp()  ;
+		serialnb++;
 	}
 	
 	String getServerIP()
