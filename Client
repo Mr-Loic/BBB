@@ -101,7 +101,9 @@ public class Client  {
     		
     		if (args[1]==null || args[2]==null) { args[1]="10"; args[2]="55";}
     		
+    		//Create the object data DataSample with the arguments received
     		DataSample data = new DataSample(args[0],args[1],args[2]) ;
+    		//Launch the application with the object data
     		Client theApp = new Client(data);
 		    theApp.getDate();
 		}
