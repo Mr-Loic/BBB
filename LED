@@ -1,0 +1,29 @@
+import java.io.*;
+
+public class Led 
+{
+	private static String LED0_PATH = "/sys/class/leds/beaglebone:green:usr";
+	
+	
+	public void setLed (String state, int lednumber)
+	{
+		
+		try{
+			if (state.equalsIgnoreCase("On") || state.equalsIgnoreCase("Off"))
+			{
+				BufferedWriter bw = new BufferedWriter ( new FileWriter (LED0_PATH+lednumber+"/trigger"));
+				bw.write("none");
+				bw.close();
+				bw = new BufferedWriter ( new FileWriter (LED0_PATH+lednumber+"/brightness"));
+				bw.write(state.equalsIgnoreCase("On")? "1":"0");
+				bw.close();
+			}
+			else {
+				System.out.println("Invalid command on LED setup");
+			}
+		}
+		catch(IOException e){
+			System.out.println("Failed to access the Beaglebone LEDs");
+		}
+	}
+}
