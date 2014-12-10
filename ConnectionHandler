@@ -8,9 +8,11 @@ public class ConnectionHandler extends Thread
     private ObjectInputStream is = null;			// Input stream
     private ObjectOutputStream os = null;			// Output stream
     private DateTimeService time;
+    private float[] tab = new float[2] ;
     
 	// The constructor for the connection handler
-    public ConnectionHandler(Socket clientSocket,DateTimeService time) {
+    public ConnectionHandler(Socket clientSocket,DateTimeService time, float [] tab) {
+    	this.tab=tab;
         this.clientSocket = clientSocket;
         this.time=time;
         //Set up a service object to get the current date and time
@@ -34,12 +36,13 @@ public class ConnectionHandler extends Thread
     // Receive and process incoming string commands from client socket 
     private boolean readCommand() {
     	
-        DataSample s = null;
-        
+        DataSample s = null;        
         
         try {
         	
             s = (DataSample) is.readObject();   
+            tab[0]= s.getlow_trigger() ;
+            tab[1]= s.gethigh_trigger() ;
             
         } 
         catch (Exception e){    // catch a general exception
