@@ -1,5 +1,5 @@
 
-import java.net.*;
+import java.net.*;  
 import java.io.*;
 
 public class Server
@@ -13,6 +13,10 @@ public class Server
 		DateTimeService theDateService = new DateTimeService();
 		boolean listening = true;
         ServerSocket serverSocket = null;
+        TheLoop listen = new TheLoop() ;	
+        //tab_trigger[0] is low_trigger and tab_trigger[1] is high_trigger
+        float[] tab_trigger = new float [2]; 
+       
         
         // Set up the Server Socket
         try 
@@ -25,10 +29,13 @@ public class Server
             System.out.println("Cannot listen on port: " + portNumber + ", Exception: " + e);
             System.exit(1);
         }
+        //infinite loop that always check for the triggers
+        //listen.Infinite(tab_trigger);
         
         // Server is now listening for connections or would not get to this point
         while (listening) // almost infinite loop - loop once for each client request
         {
+        	
             Socket clientSocket = null;
             try{
             	System.out.println("**. Listening for a connection...");
@@ -42,7 +49,7 @@ public class Server
                 listening = false;   // end the loop - stop listening for further client requests
             }	
            
-            ConnectionHandler con = new ConnectionHandler(clientSocket,theDateService);
+            ConnectionHandler con = new ConnectionHandler(clientSocket,theDateService,tab_trigger);
             con.start(); 
             System.out.println("02. -- Finished communicating with client:" + clientSocket.getInetAddress().toString());
         }
