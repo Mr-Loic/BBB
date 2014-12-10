@@ -1,0 +1,36 @@
+
+public class TheLoop extends Thread
+{
+	Led led = new Led() ;
+	Temperature temp = new Temperature();
+	
+	
+	void Infinite (float tab[])
+	{
+		while (true)
+		{
+			if(temp.getTemp() > tab[1])
+			{ 
+				led.setLed ("ON",1) ;
+			}
+			else if (temp.getTemp() < tab[0]) 
+			{
+				led.setLed("OFF",0) ;
+			}				
+		}
+	}
+	
+	public Boolean checkLED()
+	{
+		
+		
+		return true ;
+	}
+	
+	public Boolean checkTemp()
+	{
+		
+		return true ;
+	}
+		
+}
