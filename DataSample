@@ -7,18 +7,24 @@ public class DataSample implements Serializable
 	String serverIp;
 	String low_trigger;
 	String high_trigger;
+	private float[][] triggers  ;
 	String theDateCommand;
-	Temperature temp;	
+	//Temperature temperature;	
+	String theDateAndTime;
 	static int serialnb ;
+	float temp =0 ;
 	
 	public DataSample (String serverIP, String low_trigger, String high_trigger)
 	{
+		System.out.println("The constructor of dataSample has been called");
 		this.serverIp=serverIP;
 		this.low_trigger=low_trigger;
 		this.high_trigger=high_trigger;		
-		this.theDateCommand ="GetDate";
-		//temp.getTemp()  ;
+		this.theDateCommand = "GetTemp";
+		this.triggers= new float[100][2] ;
+			
 		serialnb++;
+		System.out.println("Serial number: "+serialnb +" Low Trigger: "+low_trigger+" High Trigger: "+ high_trigger) ;
 	}
 	
 	String getServerIP()
@@ -26,6 +32,15 @@ public class DataSample implements Serializable
 		return this.serverIp;
 	}
 	
+	void setlow_trigger(float trig)
+	{
+		this.low_trigger=Float.toString(trig);
+	}
+	
+	void sethigh_trigger(float trig)
+	{
+		this.high_trigger=Float.toString(trig);
+	}
 	Float getlow_trigger()
 	{
 		return Float.parseFloat(this.low_trigger);
@@ -38,4 +53,14 @@ public class DataSample implements Serializable
 	{
 		return this.theDateCommand;
 	}
+
+	void setTemperature(float set) {
+		this.temp=set;			
+	}
+
+	public void setTimeAndDate(String date) {
+		
+		this.theDateAndTime=date;
+	}
+	
 }
