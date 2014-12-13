@@ -1,33 +1,173 @@
 
-import java.net.*; 
+import java.net.*;  
 import java.io.*;
 
+import javax.swing.*; 
 
-public class Client  {
+import java.awt.*; 
+import java.awt.event.*;
+
+
+@SuppressWarnings("serial")
+public class Client extends JFrame implements ActionListener, WindowListener  {	
 	
-	
-	
+	//Graphic components
+	//So the first case of the first component is the low trigger, the second is the high
+	//Then the second component is another set of low and high triggers
+	private float[][] triggers  ;
+	private JButton button_connect;
+	private JTextField text1_1, text1_2;
+	private JTextField text2_1, text2_2;
+	private JPanel panel1, panel2, panel3, panel4 ;	
+	private JLabel label1_1, label1_2 ;
+	private JLabel label2_1, label2_2 ;
+	private JLabel[] label3_1;
+	private JProgressBar[] progressBar;
+	 
+	//.net components
 	private static int portNumber = 5050;
     private Socket socket = null;
     private ObjectOutputStream os = null;
     private ObjectInputStream is = null;
     private DataSample data ;
+    TheLoop listen = new TheLoop() ;
     
-    
+    //infinite loop that always check for the triggers
+    //listen.Infinite(tab_trigger);    
 
-	// the constructor expects the IP address of the server - the port is fixed
-    public Client(DataSample data) {
-    	this.data=data;
-    	if (!connectToServer(data)) {
-    		System.out.println("XX. Failed to open socket connection to: " + data.getServerIP());            
+	//Constructor
+    public Client() {
+    	//Call the parent class constructor and set the name of the frame
+    	super("Client Swing Application");
+    	triggers = new float[100][2] ;
+    	
+    	//Panels
+    	panel1 = new JPanel();
+    	panel2 = new JPanel();
+    	panel3 = new JPanel();
+    	panel4 = new JPanel();
+    	
+    	//Settings Panel1
+    	this.label1_1 = new JLabel("IP Adresse:");
+    	this.text1_1 = new JTextField("192.168.7.2",10);
+    	this.label1_2 = new JLabel("Port Number:");
+    	this.text1_2  = new JTextField("5050",10);
+    	this.button_connect = new JButton("Connect");
+    	
+    	//Triggers Panel2
+    	this.label2_1 = new JLabel("Actual Low Trigger:") ;
+    	this.text2_1 = new JTextField("0",10);
+    	this.label2_2 = new JLabel("Actual High Trigger:") ;
+    	this.text2_2 = new JTextField("100",10);
+    	
+    	//Historical Panel3
+    	this.progressBar = new JProgressBar[10];
+    	this.label3_1= new JLabel[10];
+    	for(int i=0 ; i<10 ; i++){
+    	this.progressBar[i]=new JProgressBar(JProgressBar.VERTICAL,-30,100) ;
+    	this.label3_1[i]= new JLabel("0") ;
+    	}
+    	
+    	
+    	
+    	
+        
+//        panel1.add(new JScrollPane(status
+//		, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
+//		  JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
+    	
+    	//Adding the components of panel1
+    	panel1.add(new JScrollPane(label1_1)) ;
+    	panel1.add(new JScrollPane(text1_1));
+    	panel1.add(new JScrollPane(label1_2)) ;
+    	panel1.add(new JScrollPane(text1_2));
+    	panel1.add(new JScrollPane(button_connect));
+    	
+    	//Adding the components of panel2
+    	panel2.add(new JScrollPane(label2_1)) ;
+    	panel2.add(new JScrollPane(text2_1));
+    	panel2.add(new JScrollPane(label2_2)) ;
+    	panel2.add(new JScrollPane(text2_2));
+    	
+    	//Adding the components of panel3
+    	for(int n=0 ; n<10 ; n++){
+    	panel3.add(new JScrollPane(label3_1[n]));
+    	panel3.add(new JScrollPane(progressBar[n]));
+    	
+    	}
+        
+       this.button_connect.addActionListener(this);
+//        this.button2.addActionListener(this);
+        
+     // default layout is border layout for Frame/JFrame
+//        this.getContentPane().add("North",this.status);
+//        this.getContentPane().add("Center",this.button1);
+//        this.getContentPane().add("South",this.button2);
+    		    	
+        
+        JTabbedPane tabbedPane = new JTabbedPane();
+		tabbedPane.addTab("Settings", panel1);
+		tabbedPane.addTab("Triggers", panel2);
+		tabbedPane.addTab("Historical", panel3);
+		tabbedPane.addTab("Time regulation", panel4);
+
+		this.getContentPane().add("Center", tabbedPane);
+		
+		
+    	this.pack();
+        this.setVisible(true);
+        
+       // this.update_progressbar();
+    }
+    
+    public void actionPerformed(ActionEvent e) {
+    	
+    	if(e.getSource().equals(button_connect))
+    	{
+    		//Create the object data DataSample with the arguments received
+    		
+    		DataSample data = new DataSample(text1_1.getText(),text2_1.getText(),text2_2.getText()) ;
+    		
+    		System.out.println("The serial nb is:"+DataSample.serialnb) ;
+
+    		//Getting the value of the low_trigger
+    		triggers[DataSample.serialnb][0] = Float.parseFloat(text2_1.getText());
+    		//Setting it to the DataSample
+    		data.setlow_trigger(triggers[DataSample.serialnb][0]);
+    		
+    		//Getting the value of the high_trigger
+    		triggers[DataSample.serialnb][1] = Float.parseFloat(text2_2.getText());
+    		//Setting it to the DataSample
+    		data.sethigh_trigger(triggers[DataSample.serialnb][1]);
+    		
+    		System.out.println(triggers[DataSample.serialnb][0] + "     " + triggers[DataSample.serialnb][1] ) ;
+    		
+    		if (!connectToServer(data)) {
+        		System.out.println("XX. Failed to open socket connection to: " + data.getServerIP());           
+        	} 
+    		
+    		//this.update_progressbar(DataSample.serialnb);
+    	
+    		this.getDate(data);  
+    	}
+    	
+           
+    }
+    
+    private void update_progressbar(int serial, int temp)
+    {
+    	if (temp < 100 && temp > -30)
+    	{
+    		progressBar[serial-1].setValue(temp);
+			label3_1[serial-1].setText(" " + temp);
     	}
     }
-
+    
     private boolean connectToServer(DataSample data) {
-    	try { 
-    		
+    	try {     		
     		
     		// open a new socket to the server 
+    	
     		this.socket = new Socket(data.getServerIP(),portNumber);
     		
     		this.os = new ObjectOutputStream((this.socket.getOutputStream()));
@@ -42,19 +182,29 @@ public class Client  {
         	System.out.println("    Exception: " + e.toString());	
         	return false;
         }
+    	
 		return true;
     }
 
-    private void getDate() {
-    	String theDateAndTime;
+    private void getDate(DataSample data) {
+    	
     	
     	System.out.println("01. -> Sending Command  "+data.gettheDatacommand()+" to the server...");
     	
+    	  //infinite loop that always check for the triggers
+        //listen.Infinite(Float.parseFloat(data.low_trigger),Float.parseFloat(data.high_trigger));
     	this.send(data);
     	try{
-    		theDateAndTime = (String) receive();
+    		//theDateAndTime = (String) receive();
+    		//float tempe = (float) receive() ;
+    		
+    		data = (DataSample) receive();
+    		
     		System.out.println("05. <- The Server responded with: ");
-    		System.out.println("    <- " + theDateAndTime);
+    		System.out.println("    <- The temperature is:" + data.temp);
+    		System.out.println("    <- The time is:"+ data.theDateAndTime);
+    		
+    		this.update_progressbar(DataSample.serialnb, (int)data.temp);
     	}
     	catch (Exception e){
     		System.out.println("XX. There was an invalid object sent back from the server");
@@ -86,6 +236,7 @@ public class Client  {
 			System.out.println("03. -- About to receive an object...");
 		    o = is.readObject();
 		    System.out.println("04. <- Object received...");
+		    
 		} 
 	    catch (Exception e) {
 		    System.out.println("XX. Exception Occurred on Receiving:" + e.toString());
@@ -93,26 +244,73 @@ public class Client  {
 		return o;
     }
 
-    public static void main(String args[]) 
+  
+	public static void main(String args[]) 
     {
     	System.out.println("**. Java Client Application - EE402 OOP Module, DCU");
-    	if (args[1]==null || args[2]==null) { args[1]="10"; args[2]="55";}
-    	if(args.length==3){
+
+    	
     		
-    		if (args[1]==null || args[2]==null) { args[1]="10"; args[2]="55";}
     		
     		//Create the object data DataSample with the arguments received
-    		DataSample data = new DataSample(args[0],args[1],args[2]) ;
+    		//DataSample data = new DataSample(args[0],args[1],args[2]) ;
     		//Launch the application with the object data
-    		Client theApp = new Client(data);
-		    theApp.getDate();
-		}
-    	else
-    	{
-    		System.out.println("Error: you must provide the address of the server");
-    		System.out.println("Usage is:  java Client x.x.x.x  (e.g. java Client 192.168.7.2)");
-    		System.out.println("      or:  java Client hostname (e.g. java Client localhost)");
-    	}    
+    	
+    		System.out.println("Creating the graphical application");
+    		
+    			new Client();
+    		
+    		
+		    //theApp.getDate();        		
+    		
+    	
+//    		System.out.println("Error: you must provide the address of the server");
+//    		System.out.println("Usage is:  java Client x.x.x.x  low_trigger high_trigger (e.g. java Client 192.168.7.2 0 15)");
+//    		System.out.println("      or:  java Client hostname low_trigger high_trigger(e.g. java Client localhost 0 15)");
+    	   
     	System.out.println("**. End of Application.");
+    	
     }
+
+	@Override
+	public void windowActivated(WindowEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowClosed(WindowEvent arg0) { 
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowClosing(WindowEvent arg0) { 
+		System.exit(0);
+		
+	}
+
+	@Override
+	public void windowDeactivated(WindowEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowDeiconified(WindowEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowIconified(WindowEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	@Override
+	public void windowOpened(WindowEvent arg0) {
+		// TODO Auto-generated method stub
+		
+	}
 }
