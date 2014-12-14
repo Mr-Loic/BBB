@@ -3,6 +3,7 @@ import java.net.*;
 import java.io.*;
 
 import javax.swing.*; 
+import javax.swing.border.EmptyBorder;
 
 import java.awt.*; 
 import java.awt.event.*;
@@ -14,32 +15,38 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
 	//Graphic components
 	//So the first case of the first component is the low trigger, the second is the high
 	//Then the second component is another set of low and high triggers
-	private float[][] triggers  ;
-	private JButton button_connect;
+	private float[] triggers  ;
+	private JButton button_connect, pop_up, information, refresh, getTemp;
+	private JButton automeasure ;
 	private JTextField text1_1, text1_2;
 	private JTextField text2_1, text2_2;
+	private JTextField text4_1 ;
 	private JPanel panel1, panel2, panel3, panel4 ;	
 	private JLabel label1_1, label1_2 ;
-	private JLabel label2_1, label2_2 ;
+	private JLabel label2_1, label2_2, label2_3 ;
 	private JLabel[] label3_1;
-	private JProgressBar[] progressBar;
+	private JLabel label4_1;
+	private DataSample[] arraydata;
+	static int element=0;
+
+	private JProgressBar[] progressbar;
 	 
 	//.net components
 	private static int portNumber = 5050;
     private Socket socket = null;
     private ObjectOutputStream os = null;
     private ObjectInputStream is = null;
-    private DataSample data ;
-    TheLoop listen = new TheLoop() ;
-    
-    //infinite loop that always check for the triggers
-    //listen.Infinite(tab_trigger);    
+    private DataSample data ;  
+    private TheLoopClient listenloop;
 
 	//Constructor
     public Client() {
     	//Call the parent class constructor and set the name of the frame
     	super("Client Swing Application");
-    	triggers = new float[100][2] ;
+    	
+    	arraydata = new DataSample[10];
+    	triggers = new float[2] ;
+    	data= new DataSample();
     	
     	//Panels
     	panel1 = new JPanel();
@@ -50,8 +57,11 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
     	//Settings Panel1
     	this.label1_1 = new JLabel("IP Adresse:");
     	this.text1_1 = new JTextField("192.168.7.2",10);
+    	this.text1_1.setEditable(false);
     	this.label1_2 = new JLabel("Port Number:");
     	this.text1_2  = new JTextField("5050",10);
+    	this.text1_2.setEditable(false);
+    	this.pop_up = new JButton("Change settings");
     	this.button_connect = new JButton("Connect");
     	
     	//Triggers Panel2
@@ -59,108 +69,194 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
     	this.text2_1 = new JTextField("0",10);
     	this.label2_2 = new JLabel("Actual High Trigger:") ;
     	this.text2_2 = new JTextField("100",10);
+    	this.label2_3 = new JLabel("Temperature not recorded yet") ;    	
+    	this.label2_3.setOpaque(false);
+    	this.getTemp = new JButton("Temperature");
+    	label2_3.setFont(new Font("", Font.HANGING_BASELINE , 15));
+    	label2_3.setForeground(Color.RED);
     	
     	//Historical Panel3
-    	this.progressBar = new JProgressBar[10];
+    	this.progressbar = new JProgressBar[10];
     	this.label3_1= new JLabel[10];
     	for(int i=0 ; i<10 ; i++){
-    	this.progressBar[i]=new JProgressBar(JProgressBar.VERTICAL,-30,100) ;
+    	this.progressbar[i]=new JProgressBar(JProgressBar.VERTICAL,0,30) ;
     	this.label3_1[i]= new JLabel("0") ;
-    	}
+    	}   
     	
+    	this.refresh = new JButton("Refresh");
     	
-    	
-    	
-        
-//        panel1.add(new JScrollPane(status
-//		, JScrollPane.VERTICAL_SCROLLBAR_ALWAYS,
-//		  JScrollPane.HORIZONTAL_SCROLLBAR_ALWAYS));
+
+    	//Time Steps Panel4
+    	this.label4_1= new JLabel("Set Up the time:") ;
+    	this.text4_1 = new JTextField("1",10);
+    	this.information = new JButton("Information");
+    	this.automeasure = new JButton("Activate auto mode");
     	
     	//Adding the components of panel1
     	panel1.add(new JScrollPane(label1_1)) ;
     	panel1.add(new JScrollPane(text1_1));
     	panel1.add(new JScrollPane(label1_2)) ;
     	panel1.add(new JScrollPane(text1_2));
-    	panel1.add(new JScrollPane(button_connect));
+    	panel1.add(new JScrollPane(pop_up));
+    	panel1.add(new JScrollPane(button_connect));    	
     	
     	//Adding the components of panel2
-    	panel2.add(new JScrollPane(label2_1)) ;
+    	panel2.add(new JScrollPane(label2_1));
     	panel2.add(new JScrollPane(text2_1));
-    	panel2.add(new JScrollPane(label2_2)) ;
+    	panel2.add(new JScrollPane(label2_2));
     	panel2.add(new JScrollPane(text2_2));
+    	panel2.add(new JScrollPane(label2_3));
+    	panel2.add(new JScrollPane(getTemp)); 
     	
-    	//Adding the components of panel3
-    	for(int n=0 ; n<10 ; n++){
-    	panel3.add(new JScrollPane(label3_1[n]));
-    	panel3.add(new JScrollPane(progressBar[n]));
-    	
+    	//Adding the components of panel3    	
+    	panel3.add(new JScrollPane(refresh));
+    	for(int n=0 ;n<10 ; n++){
+    		panel3.add(new JScrollPane(progressbar[n]));
     	}
+    
+    	    	   
+    	
+    	//Adding the components of panel4
+    	panel4.add(new JScrollPane(label4_1));
+    	panel4.add(new JScrollPane(text4_1));
+    	panel4.add(new JScrollPane(information));
+    	panel4.add(new JScrollPane(automeasure));
         
        this.button_connect.addActionListener(this);
-//        this.button2.addActionListener(this);
-        
-     // default layout is border layout for Frame/JFrame
-//        this.getContentPane().add("North",this.status);
-//        this.getContentPane().add("Center",this.button1);
-//        this.getContentPane().add("South",this.button2);
+       this.pop_up.addActionListener(this);
+       this.information.addActionListener(this);
+       this.automeasure.addActionListener(this);
+       this.refresh.addActionListener(this);
+       this.getTemp.addActionListener(this);
     		    	
-        
         JTabbedPane tabbedPane = new JTabbedPane();
 		tabbedPane.addTab("Settings", panel1);
 		tabbedPane.addTab("Triggers", panel2);
 		tabbedPane.addTab("Historical", panel3);
 		tabbedPane.addTab("Time regulation", panel4);
 
-		this.getContentPane().add("Center", tabbedPane);
-		
+		this.getContentPane().add("Center", tabbedPane);		
 		
     	this.pack();
         this.setVisible(true);
         
-       // this.update_progressbar();
+      
     }
     
     public void actionPerformed(ActionEvent e) {
     	
-    	if(e.getSource().equals(button_connect))
-    	{
-    		//Create the object data DataSample with the arguments received
-    		
-    		DataSample data = new DataSample(text1_1.getText(),text2_1.getText(),text2_2.getText()) ;
-    		
-    		System.out.println("The serial nb is:"+DataSample.serialnb) ;
-
-    		//Getting the value of the low_trigger
-    		triggers[DataSample.serialnb][0] = Float.parseFloat(text2_1.getText());
-    		//Setting it to the DataSample
-    		data.setlow_trigger(triggers[DataSample.serialnb][0]);
-    		
-    		//Getting the value of the high_trigger
-    		triggers[DataSample.serialnb][1] = Float.parseFloat(text2_2.getText());
-    		//Setting it to the DataSample
-    		data.sethigh_trigger(triggers[DataSample.serialnb][1]);
-    		
-    		System.out.println(triggers[DataSample.serialnb][0] + "     " + triggers[DataSample.serialnb][1] ) ;
-    		
-    		if (!connectToServer(data)) {
-        		System.out.println("XX. Failed to open socket connection to: " + data.getServerIP());           
-        	} 
-    		
-    		//this.update_progressbar(DataSample.serialnb);
     	
-    		this.getDate(data);  
+    	if(e.getSource().equals(getTemp))
+    	{
+    		this.data.setCommand("GetTemp");
+    		data=this.getCommand(data); 
+    		
+    		this.data.setTemperature(data.temp);
+    		this.label2_3.setText(Float.toString(data.getTemperature())+"°C") ; 
     	}
     	
+    	if(e.getSource().equals(refresh))
+    	{
+    	  float thelooptemp;
+    	  element++;
+    	  if (element>=10) { element=10;}
+    	  
+      	  //this.update_progressbar();
+    	  
+    		for(int i=0 ; i<element ; i++){
+    			
+        		thelooptemp=arraydata[i].getTemperature();
+        		
+        		System.out.println("The loop temp equals:"+thelooptemp+"\n the element is " +element);
+        		
+        		
+    	    	this.progressbar[i].setValue((int)thelooptemp);
+
+    	    	
+    	    	} 
+    	    	
+    	  this.label2_3.setText(Float.toString(data.temp)+"°C") ;
+    	}
+    	
+    	if(e.getSource().equals(information))
+    	{
+    		JOptionPane.showMessageDialog(this, "Setting up a time in seconds which determine the time step between an automatical temperature measure", "Information", JOptionPane.INFORMATION_MESSAGE);
+    	}
+    	
+    	if(e.getSource().equals(automeasure))
+    	{    		
+    		System.out.println("Button Clicked");
+    			
+    			try {
+    			int time =  Integer.parseInt(text4_1.getText()); 
+    			
+    			listenloop = new TheLoopClient(time, this);
+    			
+    			listenloop.start();
+    			}
+    			 catch (Exception f) {
+    		        	
+    		        	System.out.println(" Exception: " + f.toString());	
+    			 }
+    			button_connect.setEnabled(false);
+    		}    		     		
+    	
+    	
+    	if(e.getSource().equals(pop_up))
+    	{
+    		//Here YES is choice=0, NO choice=1 , cancel choice=2
+    		int choice =JOptionPane.showConfirmDialog(this, "Are you sure?", "Settings", JOptionPane.YES_NO_CANCEL_OPTION,JOptionPane.INFORMATION_MESSAGE);
+    		
+    		if(choice==0)
+    		{
+    			String IP = JOptionPane.showInputDialog(this, "What new IP adress?", 
+    					"IP adress", JOptionPane.QUESTION_MESSAGE);
+    			String Port = JOptionPane.showInputDialog(this, "What new Port number?", 
+    					"IP adress", JOptionPane.QUESTION_MESSAGE);   
+    			
+    			text1_1.setText(IP);
+    			text1_2.setText(Port);
+    			JOptionPane.showMessageDialog(this, "Change has been made", "Settings", JOptionPane.INFORMATION_MESSAGE);
+    		}
+    		
+    		if(choice==1)
+    		{
+    			JOptionPane.showMessageDialog(this, "No change has been made", "Settings", JOptionPane.INFORMATION_MESSAGE);
+    		}    		
+    		    		
+    	}
+    	if(e.getSource().equals(button_connect))
+    	{
+    		
+    		data.setIP(text1_1.getText());
+    		data.setCommand("GetTrigger");
+    		
+       	  
+       	  if (!connectToServer(data)) {
+      		System.out.println("XX. Failed to open socket connection to: " + data.getServerIP());  
+      		      		
+      	} 
+       	data.setCommand("GetTrigger");
+       	data=this.getCommand(data);
+       	
+       	//Update the triggers of the servers
+    		this.text2_1.setText(""+data.getlow_trigger());
+    		this.text2_2.setText(""+data.gethigh_trigger());
+    	}   	
            
     }
     
-    private void update_progressbar(int serial, int temp)
+    private void update_progressbar()
     {
-    	if (temp < 100 && temp > -30)
-    	{
-    		progressBar[serial-1].setValue(temp);
-			label3_1[serial-1].setText(" " + temp);
-    	}
+    	
+    	for(int i=0 ; i<arraydata.length ; i++){
+    		
+    	this.progressbar[i].setValue((int)arraydata[i].getTemperature());
+
+    	
+    	} 
+    	
+    
     }
     
     private boolean connectToServer(DataSample data) {
@@ -186,7 +282,7 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
 		return true;
     }
 
-    private void getDate(DataSample data) {
+    public DataSample getCommand(DataSample data) {
     	
     	
     	System.out.println("01. -> Sending Command  "+data.gettheDatacommand()+" to the server...");
@@ -195,21 +291,15 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
         //listen.Infinite(Float.parseFloat(data.low_trigger),Float.parseFloat(data.high_trigger));
     	this.send(data);
     	try{
-    		//theDateAndTime = (String) receive();
-    		//float tempe = (float) receive() ;
     		
     		data = (DataSample) receive();
     		
-    		System.out.println("05. <- The Server responded with: ");
-    		System.out.println("    <- The temperature is:" + data.temp);
-    		System.out.println("    <- The time is:"+ data.theDateAndTime);
-    		
-    		this.update_progressbar(DataSample.serialnb, (int)data.temp);
     	}
     	catch (Exception e){
     		System.out.println("XX. There was an invalid object sent back from the server");
     	}
-    	System.out.println("06. -- Disconnected from Server.");
+    
+    	return data;
     }
 	
     // method to send a generic object.
@@ -249,21 +339,14 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
     {
     	System.out.println("**. Java Client Application - EE402 OOP Module, DCU");
 
-    	
-    		
-    		
     		//Create the object data DataSample with the arguments received
     		//DataSample data = new DataSample(args[0],args[1],args[2]) ;
     		//Launch the application with the object data
     	
-    		System.out.println("Creating the graphical application");
+    	System.out.println("Creating the graphical application");
     		
     			new Client();
-    		
-    		
-		    //theApp.getDate();        		
-    		
-    	
+ 
 //    		System.out.println("Error: you must provide the address of the server");
 //    		System.out.println("Usage is:  java Client x.x.x.x  low_trigger high_trigger (e.g. java Client 192.168.7.2 0 15)");
 //    		System.out.println("      or:  java Client hostname low_trigger high_trigger(e.g. java Client localhost 0 15)");
@@ -271,16 +354,38 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
     	System.out.println("**. End of Application.");
     	
     }
-
+	
+	public DataSample[] getarray()
+	{
+		return this.arraydata;
+	}
+	
+	public DataSample getelementofarray(int n)
+	{
+		if(n>=10){n=9;}
+		return this.arraydata[n];
+	}
+	
+	public void setarray (int i, DataSample data)
+	{
+		this.arraydata[i]= data;
+	}
+	public void display()
+	{
+	 for (int i=0 ;i<arraydata.length;i++)	
+	 {
+		 System.out.println("Temeprature number "+i+" equals "+arraydata[i].getTemperature());
+	 }
+	}
 	@Override
 	public void windowActivated(WindowEvent arg0) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 
 	@Override
 	public void windowClosed(WindowEvent arg0) { 
-		// TODO Auto-generated method stub
+		
 		
 	}
 
@@ -292,25 +397,25 @@ public class Client extends JFrame implements ActionListener, WindowListener  {
 
 	@Override
 	public void windowDeactivated(WindowEvent arg0) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 
 	@Override
 	public void windowDeiconified(WindowEvent arg0) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 
 	@Override
 	public void windowIconified(WindowEvent arg0) {
-		// TODO Auto-generated method stub
+	
 		
 	}
 
 	@Override
 	public void windowOpened(WindowEvent arg0) {
-		// TODO Auto-generated method stub
+		
 		
 	}
 }
