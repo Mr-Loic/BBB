@@ -11,12 +11,14 @@ public class DateTimeService
    //	  the time zone and locale
    public DateTimeService()
    {
-	 this.calendar = Calendar.getInstance();
+	 
    }
 
    //method returns date/time as a formatted String object
+   
    public String getDateAndTime()
    {
+	   this.calendar = Calendar.getInstance();
 	 Date d = this.calendar.getTime();
      return "The BeagleBone time is: " + d.toString();	
    }	
