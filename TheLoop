@@ -1,36 +1,68 @@
 
+import java.net.*;  
+import java.io.*;
+
 public class TheLoop extends Thread
 {
 	Led led = new Led() ;
-	Temperature temp = new Temperature();
-	
-	
-	void Infinite (float tab[])
+	DataSample data;
+	boolean bool; 
+	private float[] tab = new float[2];
+
+	TheLoop(DataSample data, float[] tab )
+	{			
+		this.data=data;
+		this.bool=true;
+		this.tab[0]=tab[0];
+		this.tab[1]=tab[1];
+	}	
+
+	public synchronized void run()
 	{
-		while (true)
+		while (bool)
 		{
-			if(temp.getTemp() > tab[1])
+			//first led is ON if the temperature is above high_trigger
+			if(checkfirstLED())
 			{ 
-				led.setLed ("ON",1) ;
+				led.setLed("ON",0) ;
+				led.setLed("OFF",1) ;
 			}
-			else if (temp.getTemp() < tab[0]) 
+
+			//Second led is ON if the temperature is under low_trigger
+			else if (checksecondLED()) 
 			{
+				led.setLed("ON",1) ;
 				led.setLed("OFF",0) ;
-			}				
+			}			
+
+			try {				
+				//We sleep to avoid overloading 
+				Thread.sleep(10000);
+							
+			}
+			catch (Exception e) {
+				System.out.println("    Exception: " + e.toString());
+			}
+
 		}
 	}
-	
-	public Boolean checkLED()
-	{
-		
-		
-		return true ;
+
+	public Boolean checkfirstLED()
+	{	
+		if(data.getTemperature() >tab[1])
+		{
+			return true ;
+		}
+		return false ;
 	}
-	
-	public Boolean checkTemp()
+
+	public Boolean checksecondLED()
 	{
-		
-		return true ;
+		if(data.getTemperature() < tab[0])
+		{
+			return true ;
+		}
+		return false ;
 	}
-		
+
 }
