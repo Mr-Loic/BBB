@@ -8,6 +8,80 @@ public class TheLoopClient extends Thread
 
 	Temperature temp = new Temperature();
 	int time ;
+import java.net.*;  
+import java.io.*;
+
+public class TheLoopClient extends Thread
+{
+	static int countelem;
+
+	Temperature temp = new Temperature();
+	int time ;
+	DataSample data;
+	boolean bool; 
+	private Client client ;
+	
+	TheLoopClient(int time, Client client)
+	{
+		countelem=0;
+		this.time=time;
+		this.bool=true;
+		this.data=new DataSample();
+		data.setCommand("GetTemp");
+		this.client= client ;
+	}	
+	
+	public void run()
+	{
+		
+		while (bool)
+		{		
+			if(countelem >=10) {countelem=10;}
+			
+			
+			data=client.getCommand(data) ;
+			
+			arraymanager(data);
+			
+			countelem++;
+			
+			try {
+				Thread.sleep(time*1000);
+				System.out.println("Looping...");
+				
+			}
+			catch (Exception e) {
+				System.out.println("    Exception: " + e.toString());
+			}
+			
+			//client.display();
+		}
+		
+		this.interrupt();
+		
+	}
+	
+	public void arraymanager(DataSample data)
+	{
+		
+		if (countelem==10)
+		{
+			for (int n=1 ; n<client.getarray().length ; n++)
+			{
+				client.setarray(n-1, client.getelementofarray(n));
+			}
+			client.setarray(countelem-1,data) ;
+		}
+		else{
+			client.setarray(countelem,data) ;
+		}
+			
+		
+		
+	}
+	
+}
+
 	DataSample data;
 	boolean bool; 
 	private Client client ;
